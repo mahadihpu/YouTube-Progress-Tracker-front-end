@@ -1,56 +1,54 @@
-import React from 'react';
-import './index.css';
+import React, { useState, useEffect } from "react";
+import "./index.css";
+import axios from "axios";
+import CoursePage from "./pages/CoursePage";
+import CourseCard from "./components/Card";
 
-
-const CourseCard = ({ title, progress, description }) => {
-  return (
-    <div className="p-4 rounded-lg shadow-md">
-      <div className="mt-4">
-        <h5 className="text-lg font-bold">{title}</h5>
-        <p className="text-sm text-gray-600">{description}</p>
-        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
-          <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
-        </div>
-      </div>
-      <button className="mt-4 bg-blue-500 text-white p-2 rounded-lg w-full">
-        View
-      </button>
-    </div>
-  );
-};
 
 const AddPlaylistModal = () => {
+  const [playlistId, setPlaylistId] = useState("");
+
+  const handleAddPlaylist = async () => {
+    try {
+      const response = await axios.post("http://localhost:8080/playlists/mahadi.gusion@gmail.com", {
+        playlistId: playlistId
+      });
+      console.log(response.data);
+      // Reset the input field after successful addition
+      setPlaylistId("");
+    } catch (error) {
+      console.error("Error adding playlist:", error);
+    }
+  };
+
   return (
-    <div className='mb-8'>
+    <div className="mb-8">
       <div className="bg-white p-8 rounded-lg shadow-lg w-1/3">
         <h2 className="text-2xl font-bold mb-4">Add New Playlist</h2>
         <div className="mb-4">
-          <label htmlFor="playlistName" className="block text-gray-700 text-sm font-bold mb-2">
-            Name
+          <label
+            htmlFor="playlistName"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
+            Playlist ID
           </label>
           <input
             type="text"
             id="playlistName"
-            placeholder="Enter item name"
+            placeholder="Enter the playlist id"
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            value={playlistId}
+            onChange={(e) => setPlaylistId(e.target.value)}
           />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="playlistDescription" className="block text-gray-700 text-sm font-bold mb-2">
-            Description
-          </label>
-          <textarea
-            id="playlistDescription"
-            placeholder="Enter item description"
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-            rows="3"
-          ></textarea>
         </div>
         <div className="flex justify-between">
           <button className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center">
             Cancel
           </button>
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
+            onClick={handleAddPlaylist}
+          >
             Add
           </button>
         </div>
@@ -60,21 +58,50 @@ const AddPlaylistModal = () => {
 };
 
 const App = () => {
+  const [page, setPage] = useState("home")
+  useEffect(() => {
+    // This function is marked as async to use await inside it
+    const fetchPlaylist = async () => {
+      try {
+        // Await the promise to resolve and get the actual response
+        const playlistResp = await axios.get(
+          "http://localhost:8080/playlists/mahadi.gusion@gmail.com" // Replace with actual user ID
+        );
+
+        // Log the response data
+        console.log(playlistResp.data);
+      } catch (error) {
+        // Handle any errors here
+        console.error("Error fetching playlist:", error);
+      }
+    };
+
+    // Call the async function
+    fetchPlaylist();
+  }, []);
   return (
     <div className="p-8">
-      <AddPlaylistModal />
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <CourseCard
-          title="Product Management"
-          progress={75}
-          description="This is a course"
-        />
-        <CourseCard
-          title="Web Development"
-          progress={75}
-          description="This is a course"
-        />
-      </div>
+ {
+  page === "home" &&   <div>
+  <AddPlaylistModal />
+     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+       <CourseCard
+         title="Product Management"
+         progress={75}
+         description="This is a course"
+       />
+       <CourseCard
+         title="Web Development"
+         progress={75}
+         description="This is a course"
+         setPage={setPage}
+       />
+     </div>
+  </div>
+ }
+ {
+  page === "course" && <CoursePage />
+ }
     </div>
   );
 };
