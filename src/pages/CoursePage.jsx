@@ -34,10 +34,10 @@ export default function CoursePage({ playlist, userId }) {
   return (
     <div className="flex flex-wrap modal-container bg-white p-4 md:p-8 rounded-lg shadow-lg items-center">
       <div className="w-full md:w-1/2 items-center">
-      <p className="text-xl font-bold mb-2">{selectedVideo.title}</p>
+      <p className="text-xl font-bold mb-2">{selectedVideo?.title}</p>
         {selectedVideo && (
           <ReactPlayer
-            url={`https://www.youtube.com/watch?v=${selectedVideo.videoId}`}
+            url={`https://www.youtube.com/watch?v=${selectedVideo?.videoId}`}
             controls={true}
             className="react-player"
             width="100%"
