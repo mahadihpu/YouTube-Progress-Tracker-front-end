@@ -18,7 +18,7 @@ export default function CoursePage({ playlist, userId }) {
 
       // Update video completion status in the database
       await axios.put(
-        `http://localhost:8080/playlists/${userId}/${playlist.playlistId}/videos/${updatedVideos[index].videoId}`,
+        `https://youtube-progress-tracker-api.onrender.com/playlists/${userId}/${playlist.playlistId}/videos/${updatedVideos[index].videoId}`,
         { watched: updatedVideos[index].watched }
       );
     } catch (error) {

@@ -12,7 +12,7 @@ const AddPlaylistModal = ({ onPlaylistAdded, setPage, setCurrentPlaylist }) => {
   const fetchPlaylist = async () => {
     try {
       const playlistResp = await axios.get(
-        "http://localhost:8080/playlists/mahadi.gusion@gmail.com"
+        "https://youtube-progress-tracker-api.onrender.com/playlists/mahadi.gusion@gmail.com"
       );
       setCourses(playlistResp?.data);
     } catch (error) {
@@ -27,7 +27,7 @@ const AddPlaylistModal = ({ onPlaylistAdded, setPage, setCurrentPlaylist }) => {
 
   const handleAddPlaylist = async () => {
     try {
-      const response = await axios.post("http://localhost:8080/playlists/mahadi.gusion@gmail.com", {
+      const response = await axios.post("https://youtube-progress-tracker-api.onrender.com/playlists/mahadi.gusion@gmail.com", {
         playlistId: playlistId,
         title: title,
         description: description,
@@ -47,7 +47,7 @@ const AddPlaylistModal = ({ onPlaylistAdded, setPage, setCurrentPlaylist }) => {
   const handleDeletePlaylist = async (playlistId) => {
     try {
       await axios.delete(
-        `http://localhost:8080/playlists/mahadi.gusion@gmail.com/${playlistId}`
+        `https://youtube-progress-tracker-api.onrender.com/playlists/mahadi.gusion@gmail.com/${playlistId}`
       );
       // Refresh the playlist after deletion
       fetchPlaylist();
