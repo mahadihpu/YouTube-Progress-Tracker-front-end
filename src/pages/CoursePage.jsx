@@ -2,13 +2,47 @@ import React, { useEffect, useState } from "react";
 import ReactPlayer from "react-player";
 import axios from "axios";
 
+const useScreenSize = () => {
+  const [screenSize, setScreenSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  return screenSize;
+};
+
+const formatTime = (seconds) => {
+  if (isNaN(seconds) || seconds === undefined) return "0h 0m 0s";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${h}h ${m}m ${s}s`;
+};
+
 export default function CoursePage({ playlist, userId, setPage }) {
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [isTheatreMode, setIsTheatreMode] = useState(false);
 
   const handleVideoSelect = (videoId) => {
     const selected = playlist.videos.find((video) => video.videoId === videoId);
     setSelectedVideo(selected);
   };
+
+  console.log({playlist})
 
   const handleCheckboxChange = async (index) => {
     try {
@@ -56,17 +90,32 @@ export default function CoursePage({ playlist, userId, setPage }) {
     setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
   };
 
+  const { width } = useScreenSize();
+
+  const isMobile = width <= 767;
+  const isTablet = width > 767 && width <= 1024;
+
+  // Add hypothetical durations for each video in seconds
+  const videosWithDuration = playlist.videos.map((video, index) => ({
+    ...video,
+    duration: (index + 1) * 300, // 5 minutes per video as an example
+  }));
+
+  // Calculate total, watched, and remaining time
+  const totalTime = videosWithDuration.reduce((sum, video) => sum + (video.duration || 0), 0);
+  const watchedTime = videosWithDuration.reduce((sum, video) => video.watched ? sum + (video.duration || 0) : sum, 0);
+  const remainingTime = totalTime - watchedTime;
+
   return (
-    <div className="flex flex-wrap modal-container bg-white p-4 md:p-8 rounded-lg shadow-lg">
-      <div className="w-full md:w-1/2">
-        <div className="flex mb-4 items-center">
+    <div className={`flex flex-wrap bg-white p-6 md:p-10 rounded-lg shadow-lg ${isTheatreMode ? "theatre-mode" : ""}`}>
+      <div className={`${isTheatreMode ? "w-full" : "w-full md:w-2/3"} mb-6 md:mb-0`}>
+        <div className="flex items-center mb-4">
           <button
-            className="flex items-center px-2 py-2 rounded-md text-blue-500 border border-blue-500 text-white"
+            className="flex items-center px-4 py-2 rounded-md text-white bg-blue-500 hover:bg-blue-600 transition-colors"
             onClick={() => setPage("home")}
-            style={{ height: "40px", lineHeight: "40px" }}
           >
             <svg
-              className="w-4 h-4 mr-1"
+              className="w-5 h-5 mr-2"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -81,7 +130,15 @@ export default function CoursePage({ playlist, userId, setPage }) {
             </svg>
             Back
           </button>
-          <p className="text-xl font-bold mb-3 ml-2">{selectedVideo?.title}</p>
+          <p className="text-2xl font-semibold ml-4">{selectedVideo?.title}</p>
+          {!isMobile && !isTablet && (
+            <button
+              className="ml-auto px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+              onClick={() => setIsTheatreMode(!isTheatreMode)}
+            >
+              {isTheatreMode ? "Exit Theatre Mode" : "Theatre Mode"}
+            </button>
+          )}
         </div>
         {selectedVideo && (
           <ReactPlayer
@@ -89,27 +146,32 @@ export default function CoursePage({ playlist, userId, setPage }) {
             controls={true}
             className="react-player"
             width="100%"
-            // height="100%"
+            height={(isTheatreMode && !isMobile && !isTablet) ? "60vh" : "40vh"}
           />
         )}
         <div className="flex items-center justify-center mt-4 gap-3">
-          <div className="bg-blue-200 h-2 ml-4 flex-grow rounded-full">
+          <div className="bg-blue-200 h-2 flex-grow rounded-full overflow-hidden">
             <div
-              className="bg-blue-500 h-2 rounded-full"
+              className="bg-blue-500 h-full rounded-full"
               style={{ width: `${progress}%` }}
             ></div>
           </div>
           <p className="text-lg font-bold">{progress.toFixed(2)}%</p>
         </div>
+        <div className="mt-4">
+          <p className="text-lg font-semibold">Total Time: {formatTime(totalTime)}</p>
+          <p className="text-lg font-semibold">Watched Time: {formatTime(watchedTime)}</p>
+          <p className="text-lg font-semibold">Remaining Time: {formatTime(remainingTime)}</p>
+        </div>
       </div>
-      <div className="w-full md:w-1/2 p-2">
-        <p className="text-xl font-bold mb-2 ml-7">{playlist.title}</p>
-        <div>
+      <div className={`p-2 ${isTheatreMode ? "w-full" : "w-full md:w-1/3"} bg-gray-50 rounded-lg`}>
+        <p className="text-xl font-semibold mb-4">{playlist.title}</p>
+        <div className="space-y-2">
           {currentVideos.map((video, index) => (
             <div
               key={index}
-              className={`flex items-center cursor-pointer mb-2 p-2 ${
-                video.watched ? "bg-gray-200" : ""
+              className={`flex items-center p-3 rounded-lg cursor-pointer transition-all ${
+                video.watched ? "bg-gray-200" : "bg-white hover:bg-gray-100"
               }`}
               onClick={() => handleVideoSelect(video.videoId)}
             >
@@ -117,35 +179,24 @@ export default function CoursePage({ playlist, userId, setPage }) {
                 type="checkbox"
                 checked={video.watched}
                 onChange={() => handleCheckboxChange(index)}
-                className="mr-2"
+                className="mr-3"
               />
               <img
                 src={video.thumbnail}
                 alt={video.title}
-                className="w-17 h-14 mr-2"
+                className="w-16 h-12 object-cover rounded mr-3"
               />
               <div className="flex-grow">
-                <p className="text-xs font-bold">{video.title}</p>
-                <p className="text-xs">{video.description}</p>
+                <p className="text-sm font-semibold">{video.title}</p>
+                <p className="text-sm text-gray-600">{video.description}</p>
               </div>
             </div>
           ))}
-          {/* Display progress bar */}
-          {/* <div className="flex items-center justify-center mt-4">
-            <div className="bg-blue-200 h-2 w-full rounded-full">
-              <div
-                className="bg-blue-500 h-2 rounded-full"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-          </div> */}
           {totalPages > 1 && (
             <div className="flex justify-between items-center mt-4">
               <button
-                className={`px-4 py-2 rounded-md bg-blue-500 text-white ${
-                  currentPage === 1
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-blue-600"
+                className={`px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors ${
+                  currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""
                 }`}
                 onClick={handlePrevPage}
                 disabled={currentPage === 1}
@@ -154,10 +205,8 @@ export default function CoursePage({ playlist, userId, setPage }) {
               </button>
               <span className="mx-2">{currentPage}</span>
               <button
-                className={`px-4 py-2 rounded-md bg-blue-500 text-white ${
-                  currentPage === totalPages
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-blue-600"
+                className={`px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors ${
+                  currentPage === totalPages ? "opacity-50 cursor-not-allowed" : ""
                 }`}
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages}
